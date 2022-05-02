@@ -244,7 +244,7 @@ export const EncreuatGame = () => {
 							<span>Fase: {fase}</span>
 							<span>Punts: {punts[playerSymbol === "A" ? 0 : 1]}</span>
 							<span>
-								<div className={back ? "effect effecton" : "effect	"} onClick={() => handleBackground()}>
+								<div className={back ? "effect" : "effect effecton"} onClick={() => handleBackground()}>
 									😀
 								</div>
 								<div className={sound ? "effect" : "effect effecton"} onClick={() => handleSound()}>
