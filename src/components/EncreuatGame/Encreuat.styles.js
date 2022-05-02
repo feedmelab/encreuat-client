@@ -542,7 +542,7 @@ export const ParaulesIdecBox = styled.div`
 	padding: 2rem;
 	h5 {
 		font-size: 1rem;
-		color: var(--text-par);
+		color: (--text-par);
 		font-weight: bold;
 		letter-spacing: 0.1rem;
 		text-shadow: 0.05rem 0.1rem 3px var(--color-fosc);
@@ -559,6 +559,7 @@ export const ParaulesIdecBox = styled.div`
 		font-size: 0.7rem;
 		width: 75%;
 		color: var(--text-par);
+		color: ${(props) => (!props.bgEffect ? "var(--color-fosc)" : "var(--text-par)")};
 	}
 	ul,
 	li {

@@ -247,7 +247,7 @@ export const EncreuatGame = () => {
 								<div className={back ? "effect effecton" : "effect	"} onClick={() => handleBackground()}>
 									😀
 								</div>
-								<div className={sound ? "effect effecton" : "effect	"} onClick={() => handleSound()}>
+								<div className={sound ? "effect" : "effect effecton"} onClick={() => handleSound()}>
 									🤐
 								</div>
 							</span>
