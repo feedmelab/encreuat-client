@@ -55,9 +55,13 @@ export const EnctTitle = styled.div`
 	.effect {
 		cursor: pointer;
 		margin-right: 0.3rem;
+
 		&:hover {
 			animation: ${blink} 1.5s infinite;
 		}
+	}
+	.effecton {
+		filter: grayscale(100%);
 	}
 	span {
 		font-size: 0.7rem;
