@@ -60,7 +60,8 @@ export const EncreuatGame = () => {
 		[null, null],
 		[null, null],
 	]);
-
+	const [back, setBack] = useState<boolean>(false);
+	const [sound, setSound] = useState<boolean>(true);
 	const {
 		room,
 		setRoom,
@@ -103,7 +104,12 @@ export const EncreuatGame = () => {
 			}
 		}
 	};
-
+	const handleBackground = () => {
+		setBack((prevBack) => (prevBack = !prevBack));
+	};
+	const handleSound = () => {
+		setSound((prevSound) => (prevSound = !prevSound));
+	};
 	const handleGameUpdate = () => {
 		if (socketService.socket)
 			gameService.onGameUpdate(socketService.socket, (newChances, newTimes) => {
@@ -228,7 +234,7 @@ export const EncreuatGame = () => {
 
 	return (
 		<EnctContainer>
-			<EnctBox>
+			<EnctBox bgEffect={back}>
 				<EnctTitle>
 					{!isGameStarted && <WaitForOther>Esperant a un altre contrincant per a començar...</WaitForOther>}
 					{isGameStarted && (
@@ -237,13 +243,21 @@ export const EncreuatGame = () => {
 							<h3>Jugador: {playerSymbol}</h3>
 							<span>Fase: {fase}</span>
 							<span>Punts: {punts[playerSymbol === "A" ? 0 : 1]}</span>
+							<span>
+								<div className="effect" onClick={() => handleBackground()}>
+									😀
+								</div>
+								<div className="effect" onClick={() => handleSound()}>
+									🤐
+								</div>
+							</span>
 						</div>
 					)}
 				</EnctTitle>
 			</EnctBox>
 			{isGameEnded ? (
 				<>
-					<EnctBox>
+					<EnctBox bgEffect={back}>
 						<ParaulesRespostesBox>
 							<h4>La partida ha finalitzat</h4>
 							<ChancesContainer>
@@ -334,7 +348,7 @@ export const EncreuatGame = () => {
 							</ChancesContainer>
 						</ParaulesRespostesBox>
 					</EnctBox>
-					<EnctBox>
+					<EnctBox bgEffect={back}>
 						<ParaulesIdecBox>
 							<Congrats>
 								{punts[0] > punts[1] ? (
@@ -397,7 +411,7 @@ export const EncreuatGame = () => {
 							</Congrats>
 						</ParaulesIdecBox>
 					</EnctBox>
-					<EnctBox>
+					<EnctBox bgEffect={back}>
 						<ParaulesIdecBox>
 							<h4>Respostes correctes</h4>
 							<ul>
@@ -425,7 +439,7 @@ export const EncreuatGame = () => {
 			) : null}
 			{isGameStarted && !isGameEnded ? (
 				<>
-					<EnctBox>
+					<EnctBox bgEffect={back}>
 						<ParaulesRespostesBox>
 							<EnctInfo>
 								<RespostesBoxContainer>
@@ -452,7 +466,12 @@ export const EncreuatGame = () => {
 									<div className="or3 marcadorcentral">
 										<h4>Respostes</h4>
 										{isPlayerTurn && fase < 5 ? (
-											<CountDownTimer inititalSeconds={10} onendtimer={() => handleTimer()} setRemaining={handleRemaining} />
+											<CountDownTimer
+												soundActive={sound}
+												inititalSeconds={10}
+												onendtimer={() => handleTimer()}
+												setRemaining={handleRemaining}
+											/>
 										) : null}
 									</div>
 									<div className={playerSymbol === "B" ? "or1 r marcador" : "or2 r marcador"}>
@@ -480,7 +499,7 @@ export const EncreuatGame = () => {
 						</ParaulesRespostesBox>
 					</EnctBox>
 
-					<EnctBox>
+					<EnctBox bgEffect={back}>
 						<DefinicioBox>
 							{isPlayerTurn && fase < 5 ? (
 								<>
@@ -511,7 +530,7 @@ export const EncreuatGame = () => {
 						</DefinicioBox>
 					</EnctBox>
 					{isPlayerTurn && fase < 5 ? (
-						<EnctBox>
+						<EnctBox bgEffect={back}>
 							<EnctRespostaForm
 								onKeyDown={(e) => {
 									e.key === "Enter" && e.preventDefault();
@@ -540,7 +559,7 @@ export const EncreuatGame = () => {
 					) : null}
 				</>
 			) : !isGameEnded ? (
-				<EnctBoxLoader>
+				<EnctBoxLoader bgEffect={back}>
 					<img src="/loading_balls.svg" alt="" />
 				</EnctBoxLoader>
 			) : null}

@@ -14,7 +14,7 @@ export const EnctBox = styled.div`
 	margin-bottom: 1rem;
 	color: var(--textclar);
 	border-radius: 0.5rem;
-	background: var(--bg-container);
+	background: ${(props) => (!props.bgEffect ? "var(--bg-container)" : 'url("/bg.png")')};
 	padding: 0.3rem;
 	display: flex;
 	flex-direction: row;
@@ -31,9 +31,11 @@ export const EnctBoxLoader = styled.div`
 	color: var(--textclar);
 	border-radius: 0.5rem;
 	background: var(--bg-container);
+	background: ${(props) => (!props.bgEffect ? "var(--bg-container)" : 'url("/bg.png")')};
 	padding: 0.6rem;
 	display: flex;
 	justify-content: center;
+
 	img {
 		width: auto;
 		dispay: flex;
@@ -50,6 +52,13 @@ export const EnctTitle = styled.div`
 	margin: 0;
 	padding: 0;
 	color: var(--text);
+	.effect {
+		cursor: pointer;
+		margin-right: 0.3rem;
+		&:hover {
+			animation: ${blink} 1.5s infinite;
+		}
+	}
 	span {
 		font-size: 0.7rem;
 		display: flex;
