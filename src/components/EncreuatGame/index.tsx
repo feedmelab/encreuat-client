@@ -207,6 +207,25 @@ export const EncreuatGame = () => {
 		} else return;
 	};
 
+	const handleChangeLetter = (e: React.ChangeEvent<any>) => {
+		//use id param to transmit full word length...not so much polite but it's just a number
+		const { maxLength, value, name, id } = e.target;
+		const [fieldName, fieldIndex] = name.split("-");
+
+		// Check if they hit the max character length
+		if (value.length >= maxLength) {
+			// Check if it's not the last input field
+			if (parseInt(fieldIndex, 10) < id) {
+				// Get the next input field
+				const nextSibling = document.querySelector(`input[name=ssn-${parseInt(fieldIndex, 10) + 1}]`);
+				setPlayerRes((prevValue) => prevValue + value);
+				// If found, focus the next field
+				if (nextSibling !== null) {
+					nextSibling.focus();
+				}
+			} else alert("last");
+		}
+	};
 	const getCongratsGrade = (punts: any) => {
 		const congrats =
 			punts > 10
@@ -228,7 +247,7 @@ export const EncreuatGame = () => {
 
 	const handleInputRes = (e: React.ChangeEvent<any>) => {
 		e.preventDefault();
-		const inputRes = e.target.value;
+		const inputRes = e.target.value.toLowerCase();
 		setPlayerRes(inputRes);
 	};
 
@@ -520,9 +539,20 @@ export const EncreuatGame = () => {
 								<ParaulaBox>
 									{isPlayerTurn && fase < 5
 										? dades[fase].d.nom.split("").map((x: string, index: number) => (
-												<WordField key={index}>
-													<span>{index === 0 ? x : `*`}</span>
-												</WordField>
+												<>
+													<input
+														type="text"
+														name={`ssn-${index}`}
+														maxLength={1}
+														autoFocus={index === 0 ? true : undefined}
+														placeholder={index === 0 ? x : undefined}
+														id={dades[fase].d.nom.length}
+														onChange={handleChangeLetter}
+													/>
+													{/* <WordField key={index}>
+														<span>{index === 0 ? x : `*`}</span>
+													</WordField> */}
+												</>
 										  ))
 										: null}
 								</ParaulaBox>
@@ -535,8 +565,8 @@ export const EncreuatGame = () => {
 								onKeyDown={(e) => {
 									e.key === "Enter" && e.preventDefault();
 								}}>
-								<h4>La teva resposta</h4>
-								<input type="text" required data-errormessage-value-missing="Digues quelcom raonable.." onChange={handleInputRes} />
+								{/* <h4>La teva resposta</h4>
+								<input type="text" required data-errormessage-value-missing="Digues quelcom raonable.." onChange={handleInputRes} /> */}
 								<EnctBotoneraBox>
 									<button
 										className="btn btn-secondary"

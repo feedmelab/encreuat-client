@@ -309,6 +309,22 @@ export const ParaulaBox = styled.div`
 	display: flex;
 	flex-direction: row;
 	width: 100%;
+	input {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: none;
+		margin: 0;
+		padding: auto;
+		color: black;
+		text-align: center;
+		width: 100%;
+		height: 2.8rem;
+		height: inherit;
+		text-transform: uppercase;
+		border-radius: 0.5rem;
+		border: 1px solid #dedede;
+	}
 `;
 export const WordField = styled.div`
 	min-width: 0.4rem;
