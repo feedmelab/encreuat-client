@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { ReactHTMLElement, useContext, useEffect, useState } from "react";
 import gameContext from "../../gameContext";
 import gameService from "../../services/gameService";
 import socketService from "../../services/socketService";
@@ -82,6 +82,7 @@ export const EncreuatGame = () => {
 	} = useContext(gameContext);
 
 	const [remaining, setRemaining] = useState<number | null>(null);
+	const timeToPlay: number = 60;
 	const updateGameChances = async (event: React.FormEvent | null, fase: number, puntero: number, resposta: string) => {
 		if (event) event.preventDefault();
 		if (resposta === "") resposta = "Passo";
@@ -193,7 +194,7 @@ export const EncreuatGame = () => {
 
 	const handleRemaining = (r: number = 0) => {
 		if (r) {
-			setRemaining(25 - (r - 1));
+			setRemaining(timeToPlay - (r - 1));
 		}
 	};
 	const checkLastRound = (newChances: any) => {
@@ -217,8 +218,14 @@ export const EncreuatGame = () => {
 			// Check if it's not the last input field
 			if (parseInt(fieldIndex, 10) < id) {
 				// Get the next input field
-				const nextSibling = document.querySelector(`input[name=ssn-${parseInt(fieldIndex, 10) + 1}]`);
-				setPlayerRes((prevValue) => prevValue + value);
+				const nextSibling: any = document.querySelector(`input[name=ssn-${parseInt(fieldIndex, 10) + 1}]`);
+
+				setPlayerRes((prevValue) => {
+					if (prevValue.length >= fieldIndex) {
+						//prevValue = prevValue.slice(0, -1);
+					}
+					return prevValue + value.toLowerCase();
+				});
 				// If found, focus the next field
 				if (nextSibling !== null) {
 					nextSibling.focus();
@@ -487,7 +494,7 @@ export const EncreuatGame = () => {
 										{isPlayerTurn && fase < 5 ? (
 											<CountDownTimer
 												soundActive={sound}
-												inititalSeconds={10}
+												inititalSeconds="60"
 												onendtimer={() => handleTimer()}
 												setRemaining={handleRemaining}
 											/>

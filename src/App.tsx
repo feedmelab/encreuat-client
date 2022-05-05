@@ -19,7 +19,9 @@ const App = () => {
 
 	const connectSocket = async () => {
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const socket = await socketService.connect("http://192.168.1.132:9000").catch((err) => {
+		const urlDeploy = "http://localhost:9000";
+		//const urlProd = "https://jocs.feedmelab.com";
+		const socket = await socketService.connect(urlDeploy).catch((err) => {
 			console.log("Error: ", err);
 		});
 	};
