@@ -19,6 +19,14 @@ export interface IEncreuatGameContextProps {
 	setPlayerRes: (res: string) => void;
 	dades: any;
 	setDades: (d: any) => void;
+	playerName: string;
+	setPlayerName: (name: string) => void;
+	playerAName: string;
+	setPlayerAName: (name: string) => void;
+	playerBName: string;
+	setPlayerBName: (name: string) => void;
+	matchId: string;
+	setMatchId: (id: string) => void;
 }
 
 const defaultState: IEncreuatGameContextProps = {
@@ -40,6 +48,14 @@ const defaultState: IEncreuatGameContextProps = {
 	setPlayerRes: () => {},
 	dades: [{}],
 	setDades: () => {},
+	playerName: "",
+	setPlayerName: () => {},
+	playerAName: "",
+	setPlayerAName: () => {},
+	playerBName: "",
+	setPlayerBName: () => {},
+	matchId: "",
+	setMatchId: () => {},
 };
 
 export default React.createContext(defaultState);

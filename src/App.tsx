@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Container } from "react-bootstrap";
 import HeaderGame from "./components/HeaderGame/HeaderGame";
 import socketService from "./services/socketService";
+import gameService from "./services/gameService";
 import { JoinRoom } from "./components/JoinRoom/index";
 import GameContext, { IEncreuatGameContextProps } from "./gameContext";
 import { EncreuatGame } from "./components/EncreuatGame";
@@ -16,6 +17,10 @@ const App = () => {
 	const [room, setRoom] = useState<string>("");
 	const [fase, setFase] = useState<number>(0);
 	const [playerRes, setPlayerRes] = useState<string>("");
+	const [playerName, setPlayerName] = useState<string>(() => localStorage.getItem("encreuat_player_name") || "");
+	const [playerAName, setPlayerAName] = useState<string>("");
+	const [playerBName, setPlayerBName] = useState<string>("");
+	const [matchId, setMatchId] = useState<string>("");
 
 	const connectSocket = async () => {
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -28,6 +33,29 @@ const App = () => {
 
 	useEffect(() => {
 		connectSocket();
+	}, []);
+
+	useEffect(() => {
+		let unsubscribeStartGame: (() => void) | null = null;
+		const unsubscribeConnected = socketService.onConnected((socket) => {
+			if (unsubscribeStartGame) unsubscribeStartGame();
+				unsubscribeStartGame = gameService.onStartGame(socket, (options) => {
+					setDades(options.dades);
+					setGameStarted(true);
+					setPlayerSymbol(options.symbol);
+					setRoom(options.room);
+					setPlayerAName(options?.players?.A || "");
+					setPlayerBName(options?.players?.B || "");
+					setMatchId(options?.matchId || "");
+					setPlayerTurn(!!options.start);
+					setInRoom(true);
+				});
+			});
+
+		return () => {
+			unsubscribeConnected();
+			if (unsubscribeStartGame) unsubscribeStartGame();
+		};
 	}, []);
 
 	const gameContextValue: IEncreuatGameContextProps = {
@@ -49,6 +77,14 @@ const App = () => {
 		setPlayerRes,
 		dades,
 		setDades,
+		playerName,
+		setPlayerName,
+		playerAName,
+		setPlayerAName,
+		playerBName,
+		setPlayerBName,
+		matchId,
+		setMatchId,
 	};
 
 	return (

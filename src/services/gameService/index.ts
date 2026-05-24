@@ -1,13 +1,69 @@
 import { Socket } from "socket.io-client";
 import { IPlayerRespostes, IPlayerTimes, IStartJoc } from "../../components/EncreuatGame";
+import { RoomErrorEvent, RoomJoinedEvent, RoomListItem, WinnersBoardEvent, WinnersBoardRow } from "../../types/socketEvents";
 
 class GameService {
-	public async joinGameRoom(socket: Socket, roomId: string): Promise<boolean> {
-		return new Promise((rs, rj) => {
-			socket.emit("join_game", { roomId });
-			socket.on("room_joined", () => rs(true));
-			socket.on("room_join_error", ({ error }) => rj(error));
+	private waitForRoomEvent(
+		socket: Socket,
+		emitEvent: string,
+		payload: unknown,
+		successEvent: string,
+		errorEvent: string,
+		getSuccessValue: (data: RoomJoinedEvent) => string
+	): Promise<string> {
+		return new Promise((resolve, reject) => {
+			const timeoutMs = 10000;
+			const timeoutId = setTimeout(() => {
+				cleanup();
+				reject("Temps d'espera esgotat. Torna-ho a provar.");
+			}, timeoutMs);
+
+			const onSuccess = (data: RoomJoinedEvent) => {
+				cleanup();
+				resolve(getSuccessValue(data));
+			};
+
+			const onError = ({ error }: RoomErrorEvent) => {
+				cleanup();
+				reject(error || "Error desconegut");
+			};
+
+			const cleanup = () => {
+				clearTimeout(timeoutId);
+				socket.off(successEvent, onSuccess);
+				socket.off(errorEvent, onError);
+			};
+
+			socket.on(successEvent, onSuccess);
+			socket.on(errorEvent, onError);
+			socket.emit(emitEvent, payload);
 		});
+	}
+
+	public requestOpenGames(socket: Socket) {
+		socket.emit("get_open_games");
+	}
+
+	public onOpenGames(socket: Socket, listiner: (rooms: RoomListItem[]) => void) {
+		const handler = ({ rooms }: { rooms: RoomListItem[] }) => listiner(rooms || []);
+		socket.on("open_games", handler);
+		return () => socket.off("open_games", handler);
+	}
+
+	public async createGameRoom(socket: Socket): Promise<string> {
+		return this.waitForRoomEvent(socket, "create_game", undefined, "room_joined", "room_join_error", (data) => data?.roomId);
+	}
+
+	public async joinGameRoom(socket: Socket, roomId: string): Promise<string> {
+		return this.waitForRoomEvent(socket, "join_game", { roomId }, "room_joined", "room_join_error", (data) => data?.roomId);
+	}
+
+	public async joinGameRoomWithName(socket: Socket, roomId: string, playerName: string): Promise<string> {
+		return this.waitForRoomEvent(socket, "join_game", { roomId, playerName }, "room_joined", "room_join_error", (data) => data?.roomId);
+	}
+
+	public async cancelGameRoom(socket: Socket, roomId: string): Promise<string> {
+		return this.waitForRoomEvent(socket, "cancel_game", { roomId }, "room_cancelled", "room_cancel_error", (data) => data?.roomId);
 	}
 	public async updateGame(socket: Socket, gameChances: IPlayerRespostes, gameTimes: IPlayerTimes) {
 		let faseActual: number = Number(gameChances[5][0]) | 0;
@@ -19,14 +75,31 @@ class GameService {
 		socket.emit("update_game", { chances: gameChances, times: gameTimes });
 	}
 
-	public async onGameUpdate(socket: Socket, listiner: (chances: IPlayerRespostes, times: IPlayerTimes) => void) {
-		socket.on("on_game_update", ({ chances, times }) => {
+	public onGameUpdate(socket: Socket, listiner: (chances: IPlayerRespostes, times: IPlayerTimes) => void) {
+		const handler = ({ chances, times }: { chances: IPlayerRespostes; times: IPlayerTimes }) => {
 			listiner(chances, times);
-		});
+		};
+		socket.on("on_game_update", handler);
+		return () => socket.off("on_game_update", handler);
 	}
 
-	public async onStartGame(socket: Socket, listiner: (options: IStartJoc) => void) {
+	public onStartGame(socket: Socket, listiner: (options: IStartJoc) => void) {
 		socket.on("start_game", listiner);
+		return () => socket.off("start_game", listiner);
+	}
+
+	public requestLeaderboard(socket: Socket) {
+		socket.emit("get_winners_board");
+	}
+
+	public onLeaderboardUpdate(socket: Socket, listener: (board: WinnersBoardRow[]) => void) {
+		const handler = ({ board }: WinnersBoardEvent) => listener(board || []);
+		socket.on("winners_board", handler);
+		return () => socket.off("winners_board", handler);
+	}
+
+	public reportWinner(socket: Socket, winnerName: string, matchId: string, winnerPoints: number) {
+		socket.emit("report_match_winner", { winnerName, matchId, winnerPoints });
 	}
 }
 export default new GameService();

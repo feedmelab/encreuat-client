@@ -451,21 +451,25 @@ export const ChancesContainer = styled.div`
 	span img {
 		display: flex;
 	}
-	.loose {
-		width: 0.8rem;
-		filter: grayscale(100%);
-	}
-	.win {
-		display: flex;
-		width: 0.9rem;
-		animation: ${blink} 2.5s infinite;
-		filter: drop-shadow(var(--shadow));
-	}
-	.pair {
-		display: flex;
-		width: 0.9rem;
-		filter: drop-shadow(var(--shadow)) grayscale(75%);
-	}
+		.correct {
+			display: flex;
+			width: 0.9rem;
+			filter: drop-shadow(var(--shadow));
+		}
+		.win {
+			display: flex;
+			width: 0.9rem;
+			animation: ${blink} 2.5s infinite;
+			filter: drop-shadow(var(--shadow));
+		}
+		.wrong-x {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 0.95rem;
+			font-weight: bold;
+			color: #a31212;
+		}
 	span.paraula {
 		display: flex;
 		align-items: center;

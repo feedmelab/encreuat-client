@@ -39,6 +39,8 @@ export interface IStartJoc {
 	symbol: "A" | "B";
 	room: string;
 	dades: [];
+	players?: { A: string; B: string };
+	matchId?: string;
 }
 
 export const EncreuatGame = () => {
@@ -63,26 +65,82 @@ export const EncreuatGame = () => {
 	const [back, setBack] = useState<boolean>(false);
 	const [sound, setSound] = useState<boolean>(true);
 	const {
-		room,
-		setRoom,
-		playerSymbol,
-		setPlayerSymbol,
-		fase,
-		setFase,
-		setPlayerTurn,
-		isPlayerTurn,
-		setGameStarted,
+			room,
+			setRoom,
+			playerSymbol,
+			setPlayerSymbol,
+			setInRoom,
+			fase,
+			setFase,
+			setPlayerTurn,
+			isPlayerTurn,
+			setGameStarted,
 		isGameStarted,
 		isGameEnded,
 		setGameEnded,
-		playerRes,
-		setPlayerRes,
-		dades,
-		setDades,
-	} = useContext(gameContext);
+			playerRes,
+			setPlayerRes,
+			dades,
+			playerAName,
+			playerBName,
+			matchId,
+		} = useContext(gameContext);
 
 	const [remaining, setRemaining] = useState<number | null>(null);
+	const [reportedWinner, setReportedWinner] = useState<string>("");
 	const timeToPlay: number = 60;
+
+	const recomputeResults = (nextChances: IPlayerRespostes, nextTimes: IPlayerTimes) => {
+		const nextResultatTemps: IPlayerResultats = [null, null, null, null, null];
+		const nextResultatFinal: IPlayerResultats = [null, null, null, null, null];
+		const nextResultatParaula: IPlayerRespostes = [
+			[null, null],
+			[null, null],
+			[null, null],
+			[null, null],
+			[null, null],
+		];
+		const nextPunts = [0, 0];
+
+		for (let round = 0; round < 5; round++) {
+			const t0 = nextTimes?.[round]?.[0];
+			const t1 = nextTimes?.[round]?.[1];
+			if (t0 === null || t1 === null || t0 === undefined || t1 === undefined) continue;
+
+			const timeWinner = Number(t0) === Number(t1) ? "AB" : Number(t0) < Number(t1) ? "A" : "B";
+			nextResultatTemps[round] = timeWinner;
+
+			const expected = String(dades?.[round]?.d?.nom || "").toLowerCase();
+			const a0 = String(nextChances?.[round]?.[0] || "").toLowerCase();
+			const a1 = String(nextChances?.[round]?.[1] || "").toLowerCase();
+			const aCorrect = expected && a0 !== "passo" && a0 === expected;
+			const bCorrect = expected && a1 !== "passo" && a1 === expected;
+
+			const winners: Array<"A" | "B"> = [];
+			if (aCorrect) winners.push("A");
+			if (bCorrect) winners.push("B");
+			nextResultatParaula[round] = [aCorrect ? "A" : null, bCorrect ? "B" : null];
+
+			if (winners.length === 2) {
+				nextResultatFinal[round] = timeWinner;
+				if (timeWinner === "A") nextPunts[0] += 3;
+				else if (timeWinner === "B") nextPunts[1] += 3;
+				else {
+					nextPunts[0] += 1;
+					nextPunts[1] += 1;
+				}
+			} else if (winners.length === 1) {
+				nextResultatFinal[round] = winners[0];
+				if (winners[0] === "A") nextPunts[0] += 3;
+				else nextPunts[1] += 3;
+			}
+		}
+
+		setresultatTemps(nextResultatTemps);
+		setresultatParaula(nextResultatParaula);
+		setresultatFinal(nextResultatFinal);
+		setPunts(nextPunts);
+	};
 	const updateGameChances = async (event: React.FormEvent | null, fase: number, puntero: number, resposta: string) => {
 		if (event) event.preventDefault();
 		if (resposta === "") resposta = "Passo";
@@ -90,12 +148,13 @@ export const EncreuatGame = () => {
 			const newChances = [...chances];
 			const newTimes = [...times];
 
-			if (newChances[fase][puntero] === "" || newChances[fase][puntero] === null) {
-				newChances[fase][puntero] = resposta;
-				newTimes[fase][puntero] = remaining;
-				setChances(newChances);
-				setTimes(newTimes);
-			}
+				if (newChances[fase][puntero] === "" || newChances[fase][puntero] === null) {
+					newChances[fase][puntero] = resposta;
+					newTimes[fase][puntero] = remaining;
+					setChances(newChances);
+					setTimes(newTimes);
+					recomputeResults(newChances, newTimes);
+				}
 
 			if (socketService.socket) {
 				gameService.updateGame(socketService.socket, newChances, newTimes);
@@ -111,64 +170,20 @@ export const EncreuatGame = () => {
 	const handleSound = () => {
 		setSound((prevSound) => (prevSound = !prevSound));
 	};
-	const handleGameUpdate = () => {
-		if (socketService.socket)
-			gameService.onGameUpdate(socketService.socket, (newChances, newTimes) => {
-				setChances(newChances);
-				setTimes(newTimes);
-				handleGameUpdate();
-				setPlayerTurn(true);
-				checkLastRound(newChances);
-			});
+	const isRoundCorrect = (round: number, playerIndex: 0 | 1) => {
+		const answer = chances[round]?.[playerIndex];
+		const expected = dades?.[round]?.d?.nom;
+		if (!answer || answer === "Passo" || !expected) return false;
+		return String(answer).toLowerCase() === String(expected).toLowerCase();
 	};
-	const handleStage = () => {
-		if (fase < 5) {
-			const faltanRespuestas = times[fase].filter((r) => r === null);
 
-			if (faltanRespuestas.length === 0) {
-				//if time is less say time win or tie
-				const timeWinner = times[fase].reduce((acc, curr) => {
-					if (acc === curr) return "AB";
-					return acc < curr ? "A" : "B";
-				});
-
-				//if word is ok push to winners
-				const winners: any = [];
-				const paraulaWinner = chances[fase].filter((chance, index) => {
-					let pa = chance?.toString();
-					if (pa !== "Passo" && pa === dades[fase].d.nom) {
-						winners.push(index === 0 ? "A" : "B");
-					}
-
-					return index === 1 ? winners.join("") : null;
-				});
-
-				const newresultatTemps = [...resultatTemps];
-				const newresultatParaula = [...resultatParaula];
-				const newresultatFinal = [...resultatFinal];
-
-				newresultatTemps[fase] = String(timeWinner);
-				newresultatParaula[fase] = [...winners];
-
-				const npunts = [...punts];
-
-				// hi ha tie de parules
-				if (String(newresultatParaula[fase]) === "A,B") {
-					newresultatFinal[fase] = newresultatTemps[fase];
-					npunts[0] = npunts[0] += newresultatFinal[fase] === "A" ? 3 : newresultatFinal[fase] === "AB" ? 1 : 2;
-					npunts[1] = npunts[1] += newresultatFinal[fase] === "B" ? 3 : newresultatFinal[fase] === "AB" ? 1 : 2;
-				} else if (String(newresultatParaula[fase]) !== "") {
-					newresultatFinal[fase] = String(newresultatParaula[fase]);
-					npunts[String(newresultatParaula[fase]) === "A" ? 0 : 1] = punts[String(newresultatParaula[fase]) === "A" ? 0 : 1] += 3;
-				}
-
-				setPunts(npunts);
-				setresultatParaula(newresultatParaula);
-				setresultatTemps(newresultatTemps);
-				setresultatFinal(newresultatFinal);
-				setFase(chances[5][0]);
-			}
-		}
+	const getRoundIconClass = (round: number, playerIndex: 0 | 1) => {
+		if (!isRoundCorrect(round, playerIndex)) return "wrong";
+		const winner = resultatFinal[round];
+		if (winner === "AB") return "win";
+		if (winner === "A") return playerIndex === 0 ? "win" : "correct";
+		if (winner === "B") return playerIndex === 1 ? "win" : "correct";
+		return "correct";
 	};
 
 	const handleName = (name: any, flag: boolean) => {
@@ -179,19 +194,6 @@ export const EncreuatGame = () => {
 	const handleTimer = () => {
 		if (fase < 5) updateGameChances(null, fase, playerSymbol === "A" ? 0 : 1, "Passo");
 	};
-	const handleStartJoc = () => {
-		if (socketService.socket)
-			gameService.onStartGame(socketService.socket, (options) => {
-				setDades(options.dades);
-
-				setGameStarted(true);
-				setPlayerSymbol(options.symbol);
-				setRoom(options.room);
-				if (options.start) setPlayerTurn(true);
-				else setPlayerTurn(false);
-			});
-	};
-
 	const handleRemaining = (r: number = 0) => {
 		if (r) {
 			setRemaining(timeToPlay - (r - 1));
@@ -220,18 +222,43 @@ export const EncreuatGame = () => {
 				// Get the next input field
 				const nextSibling: any = document.querySelector(`input[name=ssn-${parseInt(fieldIndex, 10) + 1}]`);
 
-				setPlayerRes((prevValue) => {
-					if (prevValue.length >= fieldIndex) {
-						//prevValue = prevValue.slice(0, -1);
+					const totalFields = Number(id) || 0;
+					const chars = Array.from({ length: totalFields })
+						.map((_, idx) => {
+							const input = document.querySelector(`input[name=ssn-${idx}]`) as HTMLInputElement | null;
+							return (input?.value || "").toLowerCase();
+						})
+						.join("");
+					setPlayerRes(chars);
+					// If found, focus the next field
+					if (nextSibling !== null) {
+						nextSibling.focus();
 					}
-					return prevValue + value.toLowerCase();
-				});
-				// If found, focus the next field
-				if (nextSibling !== null) {
-					nextSibling.focus();
-				}
-			} else alert("last");
+				} else alert("last");
+			}
+		};
+
+	const handleWordKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+		const input = e.currentTarget;
+		const [_, fieldIndexRaw] = input.name.split("-");
+		const fieldIndex = Number(fieldIndexRaw) || 0;
+
+		if (e.key === "Backspace" && input.value === "" && fieldIndex > 0) {
+			const prevInput = document.querySelector(`input[name=ssn-${fieldIndex - 1}]`) as HTMLInputElement | null;
+			if (prevInput) {
+				prevInput.value = "";
+				prevInput.focus();
+			}
 		}
+
+		const totalFields = Number(input.id) || 0;
+		const chars = Array.from({ length: totalFields })
+			.map((_, idx) => {
+				const node = document.querySelector(`input[name=ssn-${idx}]`) as HTMLInputElement | null;
+				return (node?.value || "").toLowerCase();
+			})
+			.join("");
+		setPlayerRes(chars);
 	};
 	const getCongratsGrade = (punts: any) => {
 		const congrats =
@@ -243,15 +270,62 @@ export const EncreuatGame = () => {
 		return congrats;
 	};
 	useEffect(() => {
-		handleGameUpdate();
-	});
-	useEffect(() => {
-		handleStage();
-	});
-	useEffect(() => {
-		handleStartJoc();
-	});
+		let unsubscribeGameUpdate: (() => void) | null = null;
+		const unsubscribeConnected = socketService.onConnected((socket) => {
+			if (unsubscribeGameUpdate) unsubscribeGameUpdate();
+			unsubscribeGameUpdate = gameService.onGameUpdate(socket, (newChances, newTimes) => {
+				setChances(newChances);
+				setTimes(newTimes);
+				recomputeResults(newChances, newTimes);
+				setFase(Number(newChances[5][0]) || 0);
 
+				const isLastRoundFinished = newChances[4].every((r) => r !== null);
+				const isGameFinished = (Number(newChances[5][0]) || 0) >= 5 || isLastRoundFinished;
+
+				if (isGameFinished) {
+					setPlayerTurn(false);
+					setGameEnded(true);
+				} else {
+					setPlayerTurn(true);
+				}
+			});
+		});
+
+		return () => {
+			unsubscribeConnected();
+			if (unsubscribeGameUpdate) unsubscribeGameUpdate();
+		};
+	}, []);
+	useEffect(() => {
+		if (!isGameEnded || reportedWinner) return;
+		if (!socketService.socket) return;
+		if (playerSymbol !== "A") return;
+
+		let winnerName = "";
+		let winnerPoints = 0;
+		if (punts[0] > punts[1]) winnerName = playerAName;
+		else if (punts[1] > punts[0]) winnerName = playerBName;
+		if (winnerName === playerAName) winnerPoints = punts[0];
+		if (winnerName === playerBName) winnerPoints = punts[1];
+		if (!winnerName) return;
+
+		gameService.reportWinner(socketService.socket, winnerName, matchId || room, winnerPoints);
+		setReportedWinner(winnerName);
+	}, [isGameEnded, reportedWinner, punts, playerAName, playerBName, playerSymbol, room, matchId]);
+
+	const goToNewGame = async () => {
+		if (socketService.socket && room) {
+			await gameService.cancelGameRoom(socketService.socket, room).catch(() => {});
+		}
+		setInRoom(false);
+		setGameEnded(false);
+		setGameStarted(false);
+		setPlayerTurn(false);
+		setRoom("");
+		setFase(0);
+		setPlayerRes("");
+		setReportedWinner("");
+	};
 	const handleInputRes = (e: React.ChangeEvent<any>) => {
 		e.preventDefault();
 		const inputRes = e.target.value.toLowerCase();
@@ -262,7 +336,12 @@ export const EncreuatGame = () => {
 		<EnctContainer>
 			<EnctBox bgEffect={back}>
 				<EnctTitle>
-					{!isGameStarted && <WaitForOther>Esperant a un altre contrincant per a començar...</WaitForOther>}
+						{!isGameStarted && (
+							<WaitForOther>
+								Sala oberta: {room || "-"}<br />
+								Esperant a un altre contrincant per a començar...
+							</WaitForOther>
+						)}
 					{isGameStarted && (
 						<div className="d-flex flex-row justify-content-around">
 							<span>SALA: {room}</span>
@@ -316,13 +395,13 @@ export const EncreuatGame = () => {
 																</>
 															)}
 														</span>
-														<span className={playerSymbol === "A" ? "or1 index" : "or2 index"}>
-															<img
-																className={resultatTemps[index] === "AB" ? "pair" : resultatTemps[index] === "A" ? "win" : "loose"}
-																src="/asterisc_encreuat.svg"
-																alt=""
-															/>
-														</span>
+															<span className={playerSymbol === "A" ? "or1 index" : "or2 index"}>
+																{getRoundIconClass(index, 0) === "wrong" ? (
+																	<span className="wrong-x">X</span>
+																) : (
+																	<img className={getRoundIconClass(index, 0)} src="/asterisc_encreuat.svg" alt="" />
+																)}
+															</span>
 													</div>
 												) : null}
 											</div>
@@ -358,13 +437,13 @@ export const EncreuatGame = () => {
 																</>
 															)}
 														</span>
-														<span className={playerSymbol === "A" ? "or2 index" : "or1 index"}>
-															<img
-																className={resultatTemps[index] === "AB" ? "pair" : resultatTemps[index] === "B" ? "win" : "loose"}
-																src="/asterisc_encreuat.svg"
-																alt=""
-															/>
-														</span>
+															<span className={playerSymbol === "A" ? "or2 index" : "or1 index"}>
+																{getRoundIconClass(index, 1) === "wrong" ? (
+																	<span className="wrong-x">X</span>
+																) : (
+																	<img className={getRoundIconClass(index, 1)} src="/asterisc_encreuat.svg" alt="" />
+																)}
+															</span>
 													</div>
 												) : null}
 											</div>
@@ -374,8 +453,8 @@ export const EncreuatGame = () => {
 							</ChancesContainer>
 						</ParaulesRespostesBox>
 					</EnctBox>
-					<EnctBox bgEffect={back}>
-						<ParaulesIdecBox>
+						<EnctBox bgEffect={back}>
+							<ParaulesIdecBox>
 							<Congrats>
 								{punts[0] > punts[1] ? (
 									playerSymbol === "A" ? (
@@ -450,17 +529,19 @@ export const EncreuatGame = () => {
 									);
 								})}
 							</ul>
-							<div className="thankyou">
-								<span>Agraïments a:</span>
-								<a href="https://dlc.iec.cat/" rel="noreferrer" target="_blank">
-									<img src="/LOGO_IEC2.png" alt="" />
-								</a>
-								<a href="https://vilaweb.cat/" rel="noreferrer" target="_blank">
-									<img src="/vilaweb.png" alt="" />
-								</a>
-							</div>
-						</ParaulesIdecBox>
-					</EnctBox>
+								<div className="thankyou">
+									<span>Agraïments a:</span>
+									<a href="https://dlc.iec.cat/" rel="noreferrer" target="_blank">
+										<img src="/LOGO_IEC2.png" alt="" />
+									</a>
+								</div>
+								<EnctBotoneraBox>
+									<button className="btn btn-danger" type="button" onClick={goToNewGame}>
+										TORNAR A JUGAR
+									</button>
+								</EnctBotoneraBox>
+							</ParaulesIdecBox>
+						</EnctBox>
 				</>
 			) : null}
 			{isGameStarted && !isGameEnded ? (
@@ -469,8 +550,8 @@ export const EncreuatGame = () => {
 						<ParaulesRespostesBox>
 							<EnctInfo>
 								<RespostesBoxContainer>
-									<div className={playerSymbol === "A" ? "or1 l marcador" : "or2 r marcador"}>
-										<span>Jugador A</span>
+										<div className={playerSymbol === "A" ? "or1 l marcador" : "or2 r marcador"}>
+											<span>{playerAName || "Jugador A"}</span>
 										<RespostesBox>
 											{chances.map((chance, index) =>
 												index < 5 ? (
@@ -500,8 +581,8 @@ export const EncreuatGame = () => {
 											/>
 										) : null}
 									</div>
-									<div className={playerSymbol === "B" ? "or1 r marcador" : "or2 r marcador"}>
-										<span>Jugador B</span>
+										<div className={playerSymbol === "B" ? "or1 r marcador" : "or2 r marcador"}>
+											<span>{playerBName || "Jugador B"}</span>
 										<RespostesBox>
 											{chances.map((chance, index) =>
 												index < 5 ? (
@@ -553,9 +634,10 @@ export const EncreuatGame = () => {
 														maxLength={1}
 														autoFocus={index === 0 ? true : undefined}
 														placeholder={index === 0 ? x : undefined}
-														id={dades[fase].d.nom.length}
-														onChange={handleChangeLetter}
-													/>
+															id={dades[fase].d.nom.length}
+															onChange={handleChangeLetter}
+															onKeyDown={handleWordKeyDown}
+														/>
 													{/* <WordField key={index}>
 														<span>{index === 0 ? x : `*`}</span>
 													</WordField> */}
