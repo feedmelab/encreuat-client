@@ -11,6 +11,8 @@ export interface IEncreuatGameContextProps {
 	setPlayerTurn: (turn: boolean) => void;
 	isGameStarted: boolean;
 	setGameStarted: (started: boolean) => void;
+	isPreparingGame: boolean;
+	setPreparingGame: (started: boolean) => void;
 	isGameEnded: boolean;
 	setGameEnded: (started: boolean) => void;
 	fase: any;
@@ -40,6 +42,8 @@ const defaultState: IEncreuatGameContextProps = {
 	setPlayerTurn: () => {},
 	isGameStarted: false,
 	setGameStarted: () => {},
+	isPreparingGame: false,
+	setPreparingGame: () => {},
 	isGameEnded: false,
 	setGameEnded: () => {},
 	fase: 0,

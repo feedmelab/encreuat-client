@@ -1,19 +1,19 @@
 import React from "react";
 
-import { LogoContainer, LogoFeedMe, DisplayHelp } from "./HeaderGame.styles";
+import { HeaderContainer, HeaderTopRow, LogoContainer, LogoFeedMe, HeaderSubtitle } from "./HeaderGame.styles";
 
 const HeaderGame = () => (
-	<div className="container-fluid d-flex flex-row justify-content-around  pt-3 pb-3">
-		<LogoFeedMe>
-			<img src="/fblogo.jpg" alt="feedmelab brand" />
-		</LogoFeedMe>
+	<HeaderContainer>
+		<HeaderTopRow>
+			<LogoFeedMe>
+				<img src="/fblogo.jpg" alt="feedmelab brand" />
+			</LogoFeedMe>
+		</HeaderTopRow>
 		<LogoContainer>
 			<img src="/logo_encreuat.svg" alt="Emblema encreua't" />
 		</LogoContainer>
-		<DisplayHelp>
-			<span>?</span>
-		</DisplayHelp>
-	</div>
+		<HeaderSubtitle>Troba més paraules que el teu contrincant.</HeaderSubtitle>
+	</HeaderContainer>
 );
 
 export default HeaderGame;

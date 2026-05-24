@@ -1,5 +1,5 @@
 import { Socket } from "socket.io-client";
-import { IPlayerRespostes, IPlayerTimes, IStartJoc } from "../../components/EncreuatGame";
+import { IPlayerRespostes, IPlayerTimes, IStartJoc } from "../../components/EncreuatGame/types";
 import { RoomErrorEvent, RoomJoinedEvent, RoomListItem, WinnersBoardEvent, WinnersBoardRow } from "../../types/socketEvents";
 
 class GameService {
@@ -62,6 +62,22 @@ class GameService {
 		return this.waitForRoomEvent(socket, "join_game", { roomId, playerName }, "room_joined", "room_join_error", (data) => data?.roomId);
 	}
 
+	public async joinGameRoomWithNameAndDifficulty(
+		socket: Socket,
+		roomId: string,
+		playerName: string,
+		difficulty: "easy" | "medium" | "hard"
+	): Promise<string> {
+		return this.waitForRoomEvent(
+			socket,
+			"join_game",
+			{ roomId, playerName, difficulty },
+			"room_joined",
+			"room_join_error",
+			(data) => data?.roomId
+		);
+	}
+
 	public async cancelGameRoom(socket: Socket, roomId: string): Promise<string> {
 		return this.waitForRoomEvent(socket, "cancel_game", { roomId }, "room_cancelled", "room_cancel_error", (data) => data?.roomId);
 	}
@@ -83,9 +99,22 @@ class GameService {
 		return () => socket.off("on_game_update", handler);
 	}
 
+	public onGameFinished(socket: Socket, listener: (chances: IPlayerRespostes, times: IPlayerTimes) => void) {
+		const handler = ({ chances, times }: { chances: IPlayerRespostes; times: IPlayerTimes }) => {
+			listener(chances, times);
+		};
+		socket.on("game_finished", handler);
+		return () => socket.off("game_finished", handler);
+	}
+
 	public onStartGame(socket: Socket, listiner: (options: IStartJoc) => void) {
 		socket.on("start_game", listiner);
 		return () => socket.off("start_game", listiner);
+	}
+
+	public onGamePreparing(socket: Socket, listener: ({ roomId }: { roomId: string }) => void) {
+		socket.on("game_preparing", listener);
+		return () => socket.off("game_preparing", listener);
 	}
 
 	public requestLeaderboard(socket: Socket) {
@@ -102,4 +131,5 @@ class GameService {
 		socket.emit("report_match_winner", { winnerName, matchId, winnerPoints });
 	}
 }
-export default new GameService();
+const gameService = new GameService();
+export default gameService;

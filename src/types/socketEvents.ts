@@ -2,6 +2,7 @@ export interface RoomListItem {
 	roomId: string;
 	status: "waiting" | "started";
 	players: number;
+	difficulty?: "easy" | "medium" | "hard";
 }
 
 export interface RoomJoinedEvent {

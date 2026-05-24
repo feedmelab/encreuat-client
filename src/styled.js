@@ -11,6 +11,7 @@ export const GlobalStyle = createGlobalStyle`
     html, * {
         margin: 0;
         padding: 0;
+        box-sizing: border-box;
     }
 	body {
         text-rendering: optimizelegibility;
@@ -20,12 +21,8 @@ export const GlobalStyle = createGlobalStyle`
         background-color: #f2f2f2;
         
         font-family: 'Lexend', sans-serif;
-        display: flex;
-        justify-content: space-between;
-        align-items: space-between;
         margin: 0;
         padding: 0;
-        box-sizing: content-box;
         width: 100%; 
        
 	}
@@ -56,13 +53,13 @@ export const GlobalStyle = createGlobalStyle`
         display: inline;
     }
     div#root{
-        height: 100vh;
+        min-height: 100vh;
         width: 100vw;
         display: flex;
         justify-content: center;
-        align-items: space-around;
+        align-items: flex-start;
         background: #ffffff89;
-        padding-top: 0.6rem;
+        padding: 0.6rem 0 1.2rem 0;
     }
 `;
 // font-family: 'Yanone Kaffeesatz', sans-serif;

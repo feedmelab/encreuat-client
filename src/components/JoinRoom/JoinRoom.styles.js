@@ -12,31 +12,33 @@ export const swing = keyframes`
 
 export const JoinRoomContainer = styled(Container)`
 	display: grid;
-	grid-template-rows: 1fr 1fr;
-	grid-gap: 1rem;
+	grid-template-columns: 1fr;
+	gap: 0.95rem;
+	max-width: 1500px;
+	padding: 0 0.7rem 1rem 0.7rem;
 	@media only screen and (min-width: 768px) {
 		grid-template-columns: 1fr 1fr;
-		grid-gap: 1rem;
 	}
 `;
 
 export const RoomsBox = styled.div`
-	border: 1px solid transparent;
+	border: 1px solid var(--border);
 	color: var(--textclar);
-	border-radius: 0.5rem;
+	border-radius: 0.8rem;
 	background: var(--bg-container);
-	box-shadow: 0.1rem 0.05rem 0.32rem #444;
-	padding: 1.5rem;
+	box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18);
+	padding: 1.15rem 1.05rem;
 	display: flex;
 	flex-direction: column;
-	justify-content: space-around;
+	justify-content: flex-start;
+	min-height: 11rem;
 `;
 
 export const WelcomeMessage = styled.h2`
-	width: 75%;
+	width: 100%;
 	flex-wrap: wrap;
 	line-height: 1.8rem;
-	font-size: 1.6rem;
+	font-size: 1.5rem;
 	margin-bottom: var(--mb);
 	text-shadow: 0.2rem 0.2rem 0.9rem #000000;
 `;
@@ -58,29 +60,34 @@ export const RoomHeader = styled.h4`
 `;
 export const EncreuatForm = styled.div`
 	display: grid;
-	grid-template-columns: 1fr 1fr;
-	grid-gap: 0.4rem;
+	grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+	gap: 0.45rem;
 	justify-items: stretch;
+	align-items: center;
+	margin-top: 0.35rem;
 `;
 export const RoomIdInput = styled.input`
 	width: 100%;
 	border-radius: 0.3rem;
 	border: 1px solid var(--text);
 	outline: none;
-	padding: 0 0.86rem;
+	padding: 0.5rem 0.72rem;
 	color: black;
-	font-size: 0.6rem;
+	font-size: 0.8rem;
 	background: var(--back-white);
 	font-family: "Orbitron", sans-serif;
 
 	text-transform: uppercase;
 	letter-spacing: 0.02rem;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease, letter-spacing 0.2s ease;
 	&:hover {
-		transition: 0.6s ease;
-
-		letter-spacing: 0.12rem;
-		background: var(--bg-childs);
-		border: 3px solid var(--text);
+		letter-spacing: 0.04rem;
+		border: 1px solid var(--bg-childs);
+		box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+	}
+	&:focus {
+		border: 1px solid var(--bg-childs);
+		box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25);
 	}
 	&:visited {
 		background: var(--bg-childs);
@@ -89,7 +96,10 @@ export const RoomIdInput = styled.input`
 export const JoinButton = styled(Button)`
 	border: 0px solid var(--border);
 	background: var(--bg-childs);
-
+	font-weight: 700;
+	font-size: 0.82rem;
+	letter-spacing: 0.02rem;
+	padding: 0.5rem 0.65rem;
 	text-shadow: 1px 1px rgb(0, 0, 80);
 
 	&:hover {
@@ -98,5 +108,8 @@ export const JoinButton = styled(Button)`
 		border: 0px solid var(--border);
 
 		background: var(--btn-up);
+	}
+	&:disabled {
+		opacity: 0.72;
 	}
 `;

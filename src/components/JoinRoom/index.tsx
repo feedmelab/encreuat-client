@@ -9,13 +9,14 @@ interface IJoinRoomProps {}
 
 export function JoinRoom(props: IJoinRoomProps) {
 	const [roomName, setRoomName] = useState("");
+	const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
 	const [localName, setLocalName] = useState("");
 	const [isJoining, setJoining] = useState(false);
 	const [openGames, setOpenGames] = useState<RoomListItem[]>([]);
 	const [winnersBoard, setWinnersBoard] = useState<Array<{ name: string; wins: number; points: number }>>([]);
 	const [isEditingName, setIsEditingName] = useState(false);
 
-	const { setRoom, room, playerName, setPlayerName } = useContext(gameContext);
+	const { setRoom, room, playerName, setPlayerName, isPreparingGame, setPreparingGame } = useContext(gameContext);
 
 	useEffect(() => {
 		if (playerName && !localName) setLocalName(playerName);
@@ -26,6 +27,11 @@ export function JoinRoom(props: IJoinRoomProps) {
 		setRoomName(value);
 	};
 
+	const handleDifficultyChange = (e: React.ChangeEvent<any>) => {
+		const next = String(e.target.value || "medium");
+		if (next === "easy" || next === "medium" || next === "hard") setDifficulty(next);
+	};
+
 	const joinRoom = async (e: React.FormEvent) => {
 		e.preventDefault();
 
@@ -34,7 +40,7 @@ export function JoinRoom(props: IJoinRoomProps) {
 
 		setJoining(true);
 
-		const joinedRoomId = await gameService.joinGameRoomWithName(socket, roomName, playerName).catch((err) => {
+		const joinedRoomId = await gameService.joinGameRoomWithNameAndDifficulty(socket, roomName, playerName, difficulty).catch((err) => {
 			alert(err);
 		});
 
@@ -77,6 +83,7 @@ export function JoinRoom(props: IJoinRoomProps) {
 		if (cancelledRoomId) {
 			setRoom("");
 			setRoomName("");
+			setPreparingGame(false);
 		}
 		setJoining(false);
 	};
@@ -112,6 +119,18 @@ export function JoinRoom(props: IJoinRoomProps) {
 		};
 	}, []);
 
+	useEffect(() => {
+		const socket = socketService.socket;
+		if (!socket) return;
+		const onRoomError = () => {
+			setPreparingGame(false);
+		};
+		socket.on("room_join_error", onRoomError);
+		return () => {
+			socket.off("room_join_error", onRoomError);
+		};
+	}, [setPreparingGame]);
+
 	return (
 		<form onSubmit={joinRoom}>
 			<JoinRoomContainer>
@@ -124,93 +143,106 @@ export function JoinRoom(props: IJoinRoomProps) {
 						Però això no és tot, hauràs de descobrir-ne més de les que en descobreixi el teu contrincant!!
 					</RoomPar>
 				</RoomsBox>
-						{(!playerName || isEditingName) && (
-							<RoomsBox>
-								<RoomHeader>{playerName ? "Edita el teu nom o pseudònim" : "Primer pas: escriu el teu nom o pseudònim"}</RoomHeader>
-								<EncreuatForm>
-									<RoomIdInput
-										placeholder="Nom o pseudònim"
-										value={localName}
-										onChange={(e: React.ChangeEvent<any>) => setLocalName(e.target.value)}
-									/>
-									<JoinButton type="button" onClick={saveName} disabled={!localName.trim()}>
-										GUARDAR
-									</JoinButton>
-									{playerName && (
-										<JoinButton
-											type="button"
-											onClick={() => {
-												setLocalName(playerName);
-												setIsEditingName(false);
-											}}>
-											CANCEL·LAR
-										</JoinButton>
-									)}
-								</EncreuatForm>
-							</RoomsBox>
-						)}
-						{playerName && !room && !isEditingName && (
-							<>
-								<RoomsBox>
-									<EncreuatForm>
-										<RoomPar>Jugador: {playerName}</RoomPar>
-										<JoinButton type="button" onClick={() => setIsEditingName(true)}>
-											EDITAR NOM
-										</JoinButton>
-									</EncreuatForm>
-									<RoomHeader>Crea't una sala i comparteix el teu id o introdueix l'id del teu contrincant i comença a jugar!</RoomHeader>
+				{(!playerName || isEditingName) && (
+					<RoomsBox>
+						<RoomHeader>{playerName ? "Edita el teu nom o pseudònim" : "Primer pas: escriu el teu nom o pseudònim"}</RoomHeader>
+						<EncreuatForm>
+							<RoomIdInput
+								placeholder="Nom o pseudònim"
+								value={localName}
+								onChange={(e: React.ChangeEvent<any>) => setLocalName(e.target.value)}
+							/>
+							<JoinButton type="button" onClick={saveName} disabled={!localName.trim()}>
+								GUARDAR
+							</JoinButton>
+							{playerName && (
+								<JoinButton
+									type="button"
+									onClick={() => {
+										setLocalName(playerName);
+										setIsEditingName(false);
+									}}>
+									CANCEL·LAR
+								</JoinButton>
+							)}
+						</EncreuatForm>
+					</RoomsBox>
+				)}
+				{playerName && !room && !isEditingName && (
+					<>
+						<RoomsBox>
+							<EncreuatForm>
+								<RoomPar>Jugador: {playerName}</RoomPar>
+								<JoinButton type="button" onClick={() => setIsEditingName(true)}>
+									EDITAR NOM
+								</JoinButton>
+							</EncreuatForm>
+							<RoomHeader>Crea't una sala i comparteix el teu id o introdueix l'id del teu contrincant i comença a jugar!</RoomHeader>
 
 								<EncreuatForm>
 									<RoomIdInput placeholder="Room ID" value={roomName} onChange={handleRoomNameChange} />
+									<RoomIdInput
+										as="select"
+										value={difficulty}
+										onChange={handleDifficultyChange}>
+										<option value="easy">Dificultat: fàcil</option>
+										<option value="medium">Dificultat: mitjana</option>
+										<option value="hard">Dificultat: difícil</option>
+									</RoomIdInput>
 									<JoinButton type="submit" disabled={isJoining}>
 										{isJoining ? "CONECTANT..." : "ENCREUA'T"}
 									</JoinButton>
 								</EncreuatForm>
-							</RoomsBox>
-							<RoomsBox>
-								<RoomHeader>Partides obertes esperant jugador</RoomHeader>
-								{openGames.length === 0 && <RoomPar>No hi ha cap partida oberta ara mateix.</RoomPar>}
-									{openGames.length > 0 &&
-										openGames.map((openRoom) => (
-											<EncreuatForm key={openRoom.roomId}>
-												<RoomPar>
-													{openRoom.roomId} ({openRoom.players}/2) - {openRoom.status === "started" ? "EN JOC" : "DISPONIBLE"}
-												</RoomPar>
-												{openRoom.status === "waiting" ? (
-													<JoinButton type="button" disabled={isJoining} onClick={() => joinOpenedGame(openRoom.roomId)}>
-														ENTRAR
-													</JoinButton>
-												) : (
-													<JoinButton type="button" disabled>
-														EN JOC
-													</JoinButton>
-												)}
-											</EncreuatForm>
-										))}
-								</RoomsBox>
-							</>
-						)}
-							{room && (
-								<RoomsBox>
-								<RoomHeader>Sala oberta: {room}</RoomHeader>
-								<RoomPar>Esperant que un altre jugador entri a aquesta sala per començar la partida.</RoomPar>
-								<EncreuatForm>
-									<JoinButton type="button" disabled={isJoining} onClick={cancelCreatedGame}>
-										ELIMINAR JOC
-									</JoinButton>
-								</EncreuatForm>
-								</RoomsBox>
-							)}
-							<RoomsBox>
-								<RoomHeader>Guanyadors freqüents</RoomHeader>
-								{winnersBoard.length === 0 && <RoomPar>Encara no hi ha partides registrades.</RoomPar>}
-								{winnersBoard.slice(0, 10).map((item, idx) => (
-									<RoomPar key={`${item.name}-${idx}`}>
-										{idx + 1}. {item.name} - {item.wins} victòries - {item.points} punts
-									</RoomPar>
+						</RoomsBox>
+						<RoomsBox>
+							<RoomHeader>Partides obertes esperant jugador</RoomHeader>
+							{openGames.length === 0 && <RoomPar>No hi ha cap partida oberta ara mateix.</RoomPar>}
+							{openGames.length > 0 &&
+								openGames.map((openRoom) => (
+									<EncreuatForm key={openRoom.roomId}>
+										<RoomPar>
+											{openRoom.roomId} ({openRoom.players}/2) - {openRoom.status === "started" ? "EN JOC" : "DISPONIBLE"} -{" "}
+											{openRoom.difficulty === "easy" ? "FÀCIL" : openRoom.difficulty === "hard" ? "DIFÍCIL" : "MITJANA"}
+										</RoomPar>
+										{openRoom.status === "waiting" ? (
+											<JoinButton type="button" disabled={isJoining} onClick={() => joinOpenedGame(openRoom.roomId)}>
+												ENTRAR
+											</JoinButton>
+										) : (
+											<JoinButton type="button" disabled>
+												EN JOC
+											</JoinButton>
+										)}
+									</EncreuatForm>
 								))}
-							</RoomsBox>
-							</JoinRoomContainer>
-				</form>
+						</RoomsBox>
+					</>
+				)}
+				{room && (
+					<RoomsBox>
+						<RoomHeader>Sala oberta: {room}</RoomHeader>
+						<RoomPar>
+							{isPreparingGame
+								? "Preparant partida: carregant definicions vàlides..."
+								: "Esperant que un altre jugador entri a aquesta sala per començar la partida."}
+						</RoomPar>
+						<EncreuatForm>
+							<JoinButton type="button" disabled={isJoining} onClick={cancelCreatedGame}>
+								ELIMINAR JOC
+							</JoinButton>
+						</EncreuatForm>
+					</RoomsBox>
+				)}
+				<RoomsBox>
+					<RoomHeader>Guanyadors freqüents</RoomHeader>
+					{winnersBoard.length === 0 && <RoomPar>Encara no hi ha partides registrades.</RoomPar>}
+					{winnersBoard.slice(0, 10).map((item, idx) => (
+						<RoomPar key={`${item.name}-${idx}`}>
+							{idx + 1}. {item.name} - {item.wins} victòries - {item.points} punts
+						</RoomPar>
+					))}
+				</RoomsBox>
+			</JoinRoomContainer>
+		</form>
 	);
 }
