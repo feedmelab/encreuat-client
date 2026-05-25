@@ -58,6 +58,21 @@ class GameService {
 		return this.waitForRoomEvent(socket, "create_game", undefined, "room_joined", "room_join_error", (data) => data?.roomId);
 	}
 
+	public async createSoloGameRoom(
+		socket: Socket,
+		playerName: string,
+		difficulty: "easy" | "medium" | "hard"
+	): Promise<string> {
+		return this.waitForRoomEvent(
+			socket,
+			"create_solo_game",
+			{ playerName, difficulty },
+			"room_joined",
+			"room_join_error",
+			(data) => data?.roomId
+		);
+	}
+
 	public async joinGameRoom(socket: Socket, roomId: string): Promise<string> {
 		return this.waitForRoomEvent(socket, "join_game", { roomId }, "room_joined", "room_join_error", (data) => data?.roomId);
 	}

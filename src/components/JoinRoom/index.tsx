@@ -64,6 +64,22 @@ export function JoinRoom(props: IJoinRoomProps) {
 		setJoining(false);
 	};
 
+	const startSoloGame = async () => {
+		const socket = socketService.socket;
+		if (!socket || !playerName) return;
+
+		setJoining(true);
+		setPreparingGame(true);
+		const joinedRoomId = await gameService.createSoloGameRoom(socket, playerName, difficulty).catch((err) => {
+			alert(err);
+			setPreparingGame(false);
+		});
+		if (joinedRoomId) {
+			setRoom(joinedRoomId);
+		}
+		setJoining(false);
+	};
+
 	const saveName = () => {
 		const sanitized = localName.trim();
 		if (!sanitized) return;
@@ -191,6 +207,9 @@ export function JoinRoom(props: IJoinRoomProps) {
 									</RoomIdInput>
 									<JoinButton type="submit" disabled={isJoining}>
 										{isJoining ? "CONECTANT..." : "ENCREUA'T"}
+									</JoinButton>
+									<JoinButton type="button" disabled={isJoining} onClick={startSoloGame}>
+										{isJoining ? "PREPARANT..." : "JUGAR SOL/A"}
 									</JoinButton>
 								</EncreuatForm>
 						</RoomsBox>
