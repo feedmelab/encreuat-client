@@ -13,17 +13,21 @@ class GameService {
 	): Promise<string> {
 		return new Promise((resolve, reject) => {
 			const timeoutMs = 10000;
+			console.log("[room-event] emit", emitEvent, payload);
 			const timeoutId = setTimeout(() => {
+				console.error("[room-event] timeout", { emitEvent, payload, successEvent, errorEvent });
 				cleanup();
 				reject("Temps d'espera esgotat. Torna-ho a provar.");
 			}, timeoutMs);
 
 			const onSuccess = (data: RoomJoinedEvent) => {
+				console.log("[room-event] success", successEvent, data);
 				cleanup();
 				resolve(getSuccessValue(data));
 			};
 
 			const onError = ({ error }: RoomErrorEvent) => {
+				console.error("[room-event] error", errorEvent, error);
 				cleanup();
 				reject(error || "Error desconegut");
 			};
