@@ -28,7 +28,7 @@ const App = () => {
   const connectSocket = async () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     //const urlDeploy = "http://localhost:9000";
-    const urlProd = 'http://api-encreuat.feedmelab.com';
+    const urlProd = 'https://api-encreuat.feedmelab.com';
     await socketService.connect(urlProd).catch((err) => {
       console.log('Error: ', err);
     });
