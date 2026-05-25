@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Container } from 'react-bootstrap';
 import HeaderGame from './components/HeaderGame/HeaderGame';
 import socketService from './services/socketService';
@@ -24,6 +24,7 @@ const App = () => {
   const [playerAName, setPlayerAName] = useState<string>('');
   const [playerBName, setPlayerBName] = useState<string>('');
   const [matchId, setMatchId] = useState<string>('');
+  const didTryAutoRejoin = useRef(false);
 
   const connectSocket = async () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -39,9 +40,32 @@ const App = () => {
   }, []);
 
   useEffect(() => {
+    if (room) localStorage.setItem('encreuat_active_room', room);
+    else localStorage.removeItem('encreuat_active_room');
+  }, [room]);
+
+  useEffect(() => {
     let unsubscribeStartGame: (() => void) | null = null;
     let unsubscribeGamePreparing: (() => void) | null = null;
     const unsubscribeConnected = socketService.onConnected((socket) => {
+      if (!didTryAutoRejoin.current) {
+        didTryAutoRejoin.current = true;
+        const savedRoom = String(localStorage.getItem('encreuat_active_room') || '').trim().toUpperCase();
+        const savedName = String(localStorage.getItem('encreuat_player_name') || '').trim();
+        if (savedRoom && savedName) {
+          setPreparingGame(true);
+          gameService
+            .joinGameRoomWithName(socket, savedRoom, savedName)
+            .then((joinedRoomId) => {
+              if (joinedRoomId) setRoom(joinedRoomId);
+            })
+            .catch(() => {
+              localStorage.removeItem('encreuat_active_room');
+              setPreparingGame(false);
+            });
+        }
+      }
+
       if (unsubscribeStartGame) unsubscribeStartGame();
       if (unsubscribeGamePreparing) unsubscribeGamePreparing();
       unsubscribeGamePreparing = gameService.onGamePreparing(socket, () => {
