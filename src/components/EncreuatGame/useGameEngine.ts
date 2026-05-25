@@ -50,6 +50,22 @@ export function useGameEngine() {
 			.map((_, idx) => (document.querySelector(`input[name=ssn-${idx}]`) as HTMLInputElement | null)?.value?.toLowerCase() || "")
 			.join("");
 
+	const findPreviousEditableInput = (fromIndex: number) => {
+		for (let idx = fromIndex; idx >= 0; idx -= 1) {
+			const candidate = document.querySelector(`input[name=ssn-${idx}]`) as HTMLInputElement | null;
+			if (candidate && !candidate.disabled) return candidate;
+		}
+		return null;
+	};
+
+	const findNextEditableInput = (fromIndex: number, totalFields: number) => {
+		for (let idx = fromIndex; idx < totalFields; idx += 1) {
+			const candidate = document.querySelector(`input[name=ssn-${idx}]`) as HTMLInputElement | null;
+			if (candidate && !candidate.disabled) return candidate;
+		}
+		return null;
+	};
+
 	const recomputeResults = useCallback(
 		(nextChances: IPlayerRespostes, nextTimes: IPlayerTimes) => {
 			const nextResultatFinal: IPlayerResultats = [null, null, null, null, null];
@@ -168,10 +184,10 @@ export function useGameEngine() {
 		e.target.value = latestChar;
 		if (value.length < maxLength) return;
 		if (parseInt(fieldIndex, 10) < Number(id)) {
-			const nextSibling = document.querySelector(`input[name=ssn-${parseInt(fieldIndex, 10) + 1}]`) as HTMLInputElement | null;
 			const totalFields = Number(id) || 0;
 			const chars = getCurrentTypedWord(totalFields);
 			setPlayerRes(chars);
+			const nextSibling = findNextEditableInput(parseInt(fieldIndex, 10) + 1, totalFields);
 			if (nextSibling) nextSibling.focus();
 		} else {
 			alert("last");
@@ -186,7 +202,7 @@ export function useGameEngine() {
 			e.preventDefault();
 		}
 		if (e.key === "Backspace" && input.value === "" && fieldIndex > 0) {
-			const prevInput = document.querySelector(`input[name=ssn-${fieldIndex - 1}]`) as HTMLInputElement | null;
+			const prevInput = findPreviousEditableInput(fieldIndex - 1);
 			if (prevInput) {
 				prevInput.value = "";
 				prevInput.focus();

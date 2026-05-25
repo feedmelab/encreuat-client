@@ -28,6 +28,7 @@ import {
 
 export const EncreuatGame = () => {
 	const isAutoProvidedChar = (char: string) => /[-’'·\s]/u.test(char);
+	const isFixedHintChar = (char: string, index: number) => index === 0 || isAutoProvidedChar(char);
 
 	const {
 		punts,
@@ -352,23 +353,19 @@ export const EncreuatGame = () => {
 								<ParaulaBox>
 									{isPlayerTurn && fase < 5
 										? dades[fase].d.nom.split("").map((x: string, index: number) => (
-												<>
-													<input
-														type="text"
-														name={`ssn-${index}`}
-														maxLength={1}
-														autoFocus={index === 0 ? true : undefined}
-														placeholder={index === 0 ? x : undefined}
-														id={dades[fase].d.nom.length}
-														defaultValue={isAutoProvidedChar(x) ? x : ""}
-														disabled={isAutoProvidedChar(x)}
-														onChange={handleChangeLetter}
-														onKeyDown={handleWordKeyDown}
-														/>
-													{/* <WordField key={index}>
-														<span>{index === 0 ? x : `*`}</span>
-													</WordField> */}
-												</>
+												<input
+													key={`${fase}-${index}`}
+													type="text"
+													name={`ssn-${index}`}
+													maxLength={1}
+													autoFocus={index === 1 ? true : undefined}
+													placeholder={undefined}
+													id={dades[fase].d.nom.length}
+													defaultValue={isFixedHintChar(x, index) ? x : ""}
+													disabled={isFixedHintChar(x, index)}
+													onChange={handleChangeLetter}
+													onKeyDown={handleWordKeyDown}
+												/>
 										  ))
 										: null}
 								</ParaulaBox>
