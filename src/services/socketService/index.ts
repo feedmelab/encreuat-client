@@ -24,7 +24,11 @@ class SocketService {
 
 		this.connectPromise = new Promise((rs, rj) => {
 			console.log("[socket-client] connect:start", { url });
-			this.socket = io(url);
+			this.socket = io(url, {
+				transports: ["polling"],
+				upgrade: false,
+				path: "/socket.io",
+			});
 
 			if (!this.socket) {
 				this.connectPromise = null;
