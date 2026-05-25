@@ -23,6 +23,7 @@ class SocketService {
 		if (this.connectPromise) return this.connectPromise;
 
 		this.connectPromise = new Promise((rs, rj) => {
+			console.log("[socket-client] connect:start", { url });
 			this.socket = io(url);
 
 			if (!this.socket) {
@@ -30,13 +31,29 @@ class SocketService {
 				return rj();
 			}
 
+			this.socket.on("disconnect", (reason) => {
+				console.warn("[socket-client] disconnect", { reason });
+			});
+			this.socket.on("error", (error) => {
+				console.error("[socket-client] error", error);
+			});
+
 			this.socket.once("connect", () => {
+				console.log("[socket-client] connect:ok", {
+					id: this.socket?.id,
+					transport: this.socket?.io?.engine?.transport?.name,
+				});
 				this.notifyConnected(this.socket as Socket<DefaultEventsMap, DefaultEventsMap>);
 				rs(this.socket as Socket<DefaultEventsMap, DefaultEventsMap>);
 			});
 
 			this.socket.once("connect_error", (err) => {
-				console.error("Error de conexión:", err);
+				console.error("[socket-client] connect:error", {
+					message: err?.message,
+					name: err?.name,
+					description: (err as any)?.description,
+					context: (err as any)?.context,
+				});
 				this.connectPromise = null;
 				rj(err);
 			});
