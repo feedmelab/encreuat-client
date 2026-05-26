@@ -250,7 +250,10 @@ export const EncreuatGame = () => {
 									return (
 										<li key={index}>
 											<h5>{dada.d.nom}</h5>
-											<p>{dada.d.descripcio}</p>
+											<p>
+												{dada?.d?.tipus ? `[${dada.d.tipus}] ` : ""}
+												{dada.d.descripcio}
+											</p>
 										</li>
 									);
 								})}
@@ -337,7 +340,10 @@ export const EncreuatGame = () => {
 							{isPlayerTurn && fase < 5 ? (
 								<>
 									<h4>Definició:</h4>
-									<p>{dades[fase].d.descripcio}</p>
+									<p>
+										{dades?.[fase]?.d?.tipus ? `[${dades[fase].d.tipus}] ` : ""}
+										{dades[fase].d.descripcio}
+									</p>
 								</>
 							) : (
 								<>
