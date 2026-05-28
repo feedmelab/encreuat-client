@@ -50,8 +50,14 @@ const App = () => {
     const unsubscribeConnected = socketService.onConnected((socket) => {
       if (!didTryAutoRejoin.current) {
         didTryAutoRejoin.current = true;
-        const savedRoom = String(localStorage.getItem('encreuat_active_room') || '').trim().toUpperCase();
-        const savedName = String(localStorage.getItem('encreuat_player_name') || '').trim();
+        const savedRoom = String(
+          localStorage.getItem('encreuat_active_room') || '',
+        )
+          .trim()
+          .toUpperCase();
+        const savedName = String(
+          localStorage.getItem('encreuat_player_name') || '',
+        ).trim();
         if (savedRoom && savedName) {
           setPreparingGame(true);
           gameService
